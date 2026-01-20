@@ -1,0 +1,7 @@
+vosk
+pyaudiowpatch
+numpy
+scipy
+customtkinter
+argostranslate
+faster-whisper
