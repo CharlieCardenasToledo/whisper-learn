@@ -27,13 +27,60 @@ class StudyPanel(ctk.CTkFrame):
         self.create_nav_btn("📖 Vocabulario", self.show_vocab, 2)
         self.create_nav_btn("📝 Quiz", self.show_quiz, 3)
         self.create_nav_btn("🧠 Flashcards", self.show_flashcards, 4)
+        self.create_nav_btn("🔍 Gramática", self.show_grammar, 5)
         
         # 2. CONTENT AREA (Norman: Focus area)
         self.content_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.content_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
         
-        # Initialize with Loading State
-        self.show_loading()
+        # ... (Rest of init remains)
+
+    # ... (Other methods)
+
+    def show_grammar(self):
+        self.clear_content()
+        ctk.CTkLabel(self.content_frame, text="🔍 Análisis Gramatical y Contextual", font=ctk.CTkFont(size=24, weight="bold")).pack(anchor="w", pady=(0, 20))
+        
+        scroll = ctk.CTkScrollableFrame(self.content_frame, fg_color="transparent")
+        scroll.pack(fill="both", expand=True)
+        
+        grammar_list = self.data.get('grammar', [])
+        
+        if not grammar_list:
+            ctk.CTkLabel(scroll, text="No se encontró análisis gramatical avanzado.").pack(pady=20)
+            return
+
+        for g in grammar_list:
+            card = ctk.CTkFrame(scroll, fg_color="#2b2b3b", corner_radius=10)
+            card.pack(fill="x", pady=10)
+            
+            # Header: Concept + Tone Badge
+            header = ctk.CTkFrame(card, fg_color="transparent")
+            header.pack(fill="x", padx=15, pady=(15, 5))
+            
+            ctk.CTkLabel(header, text=g['concept'], font=ctk.CTkFont(size=18, weight="bold"), text_color="#ce93d8").pack(side="left")
+            
+            if g.get('tone_learning'):
+                ctk.CTkLabel(header, text=f"🎭 {g['tone_learning']}", font=ctk.CTkFont(size=12), text_color="#00e5ff").pack(side="right")
+            
+            # Content grid
+            content = ctk.CTkFrame(card, fg_color="transparent")
+            content.pack(fill="x", padx=15, pady=(0, 15))
+            
+            # Quote
+            ctk.CTkLabel(content, text="🗣️ Cita original:", font=ctk.CTkFont(size=12, weight="bold"), text_color="gray").pack(anchor="w", pady=(5,0))
+            ctk.CTkLabel(content, text=f'"{g["example_in_text"]}"', font=ctk.CTkFont(size=14, slant="italic")).pack(anchor="w", padx=10)
+            
+            # Explanation (The "Why")
+            ctk.CTkLabel(content, text="💡 Análisis Contextual:", font=ctk.CTkFont(size=12, weight="bold"), text_color="gray").pack(anchor="w", pady=(10,0))
+            ctk.CTkLabel(content, text=g['explanation'], font=ctk.CTkFont(size=14), wraplength=600).pack(anchor="w", padx=10)
+            
+            # Rule (The Theory)
+            rule_frame = ctk.CTkFrame(content, fg_color="#1a1a2e", corner_radius=5)
+            rule_frame.pack(fill="x", pady=(10, 0))
+            ctk.CTkLabel(rule_frame, text=f"📚 Regla: {g['rule']}", font=ctk.CTkFont(size=12), text_color="#aaa").pack(padx=10, pady=5, anchor="w")
+
+
 
     def create_nav_btn(self, text, command, row):
         btn = ctk.CTkButton(

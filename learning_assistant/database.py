@@ -62,6 +62,18 @@ class Database:
             last_review_ts TEXT,
             FOREIGN KEY(class_id) REFERENCES classes(id)
         )''')
+
+        # Grammar Analysis table (Phase 1)
+        c.execute('''CREATE TABLE IF NOT EXISTS grammar_points (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            class_id INTEGER,
+            concept TEXT,
+            explanation TEXT,
+            example_in_text TEXT,
+            rule TEXT,
+            tone_learning TEXT, -- e.g. "Formal business tone detected"
+            FOREIGN KEY(class_id) REFERENCES classes(id)
+        )''')
         
         conn.commit()
         conn.close()
@@ -113,6 +125,31 @@ class Database:
                       (class_id, q['question'], options_json, q['correct_answer'], q.get('explanation', ''), q.get('type', 'multiple_choice')))
         conn.commit()
         conn.close()
+
+    def save_grammar_points(self, class_id, points_list):
+        """
+        points_list: list of dicts {concept, explanation, example_in_text, rule, tone_learning}
+        """
+        conn = self.get_connection()
+        c = conn.cursor()
+        for p in points_list:
+            c.execute('''INSERT INTO grammar_points (class_id, concept, explanation, example_in_text, rule, tone_learning) 
+                         VALUES (?, ?, ?, ?, ?, ?)''',
+                      (class_id, p.get('concept'), p.get('explanation'), p.get('example_in_text'), 
+                       p.get('rule'), p.get('tone_learning', '')))
+        conn.commit()
+        conn.close()
+
+    def get_grammar_points(self, class_id):
+        conn = self.get_connection()
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        c.execute("SELECT * FROM grammar_points WHERE class_id = ?", (class_id,))
+        rows = c.fetchall()
+        
+        conn.close()
+        return [dict(r) for r in rows]
 
     def get_class(self, class_id):
         conn = self.get_connection()

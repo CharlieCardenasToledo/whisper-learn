@@ -47,8 +47,15 @@ class LearningAgent:
         if isinstance(result, list):
             return result
         elif isinstance(result, dict):
-            # Try to find the list in common keys
-            return result.get("vocabulary", result.get("words", result.get("items", [])))
+            # Check if it's a wrapper
+            if "vocabulary" in result: return result["vocabulary"]
+            if "words" in result: return result["words"]
+            if "items" in result: return result["items"]
+            
+            # Check if it's a SINGLE item (Llama 3 sometimes returns just one object)
+            if "word" in result and "definition" in result:
+                return [result]
+                
         return []
 
     def generate_questions(self, text, count=5):
@@ -58,7 +65,11 @@ class LearningAgent:
         if isinstance(result, list):
             return result
         elif isinstance(result, dict):
-             return result.get("questions", result.get("quiz", []))
+             if "questions" in result: return result["questions"]
+             if "quiz" in result: return result["quiz"]
+             # Single item check
+             if "question" in result and "options" in result:
+                 return [result]
         return []
 
     def create_flashcards(self, text):
@@ -67,7 +78,31 @@ class LearningAgent:
         if isinstance(result, list):
              return result
         elif isinstance(result, dict):
-             return result.get("flashcards", result.get("cards", []))
+             if "flashcards" in result: return result["flashcards"]
+             if "cards" in result: return result["cards"]
+             # Single item check
+             if "front" in result and "back" in result:
+                 return [result]
+        return []
+
+    def analyze_grammar(self, text):
+        """Analyze grammar and pragmatics (Phase 1)"""
+        from .prompts import GRAMMAR_ANALYSIS_PROMPT
+        result = self._generate_json(GRAMMAR_ANALYSIS_PROMPT, text)
+        
+        # Robust parsing
+        if isinstance(result, list):
+             return result
+        elif isinstance(result, dict):
+             # Wrapper check
+             if "grammar_points" in result: return result["grammar_points"]
+             if "points" in result: return result["points"]
+             if "analysis" in result: return result["analysis"]
+             if "concepts" in result: return result["concepts"]
+             
+             # Single item check
+             if "concept" in result and "explanation" in result:
+                 return [result]
         return []
 
     def chat(self, text, user_question, history=None):

@@ -85,3 +85,30 @@ Output format (JSON list of max 10 items):
     }}
 ]
 """
+
+GRAMMAR_ANALYSIS_PROMPT = """
+Act as an Expert Applied Linguist and English Teacher for B2-C1 adult learners.
+Analyze the following transcript text: "{text}"
+
+Identify 3 distinct and interesting grammatical or pragmatic elements used in the text.
+Do NOT list basic grammar (like "Subject + Verb"). Focus on:
+1. Complex Tenses (e.g. Present Perfect Continuous, Future Perfect).
+2. Modals of Deduction/Obligation.
+3. Conditionals.
+4. Discourse Markers / Connectors.
+5. Tone/Register (Formal, Informal, Academic, Slang).
+
+For each point, explain WHY the speaker used it in this specific context (Contextual Analysis).
+Also provide the general theoretical rule (The Theory).
+
+Output format (JSON list of 3 items):
+[
+  {{
+    "concept": "Name of the concept (e.g., Third Conditional)",
+    "example_in_text": "Quote using the concept from the text",
+    "explanation": "Why it was used here (e.g., To express regret about a past impossibility)",
+    "rule": "General rule (e.g., If + Past Perfect, would have + V3)",
+    "tone_learning": "Comment on tone (e.g., Polite correction, Strong emphasis)" 
+  }}
+]
+"""

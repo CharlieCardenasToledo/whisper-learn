@@ -18,7 +18,7 @@ class SessionManager:
     def _analyze_session(self, class_id, text, progress_callback=None):
         """Run full analysis pipeline with progress updates (msg, percent)"""
         agent = self._get_agent()
-        total_steps = 4
+        total_steps = 5
         current_step = 0
         
         def report(msg):
@@ -78,6 +78,17 @@ class SessionManager:
             self.logger.error(f"Error in flashcards: {e}")
             
         current_step += 1
+
+        # 5. Grammar & Context (Estimated: 8-10s) - NEW PHASE 1
+        try:
+            report(f"Detectando patrones gramaticales avanzados...")
+            grammar_points = agent.analyze_grammar(text)
+            if grammar_points:
+                self.db.save_grammar_points(class_id, grammar_points)
+        except Exception as e:
+            self.logger.error(f"Error in grammar analysis: {e}")
+
+        current_step += 1
         report("¡Análisis completado! 🎉")
 
     def save_session(self, raw_text, title=None, duration=0, progress_callback=None):
@@ -116,6 +127,10 @@ class SessionManager:
         # Flashcards
         c.execute("SELECT * FROM flashcards WHERE class_id = ?", (class_id,))
         data['flashcards'] = [dict(r) for r in c.fetchall()]
+        
+        # Grammar (Phase 1)
+        c.execute("SELECT * FROM grammar_points WHERE class_id = ?", (class_id,))
+        data['grammar'] = [dict(r) for r in c.fetchall()]
         
         conn.close()
         return data
