@@ -44,6 +44,8 @@ def setup_cuda_paths():
     except: pass
 
 setup_cuda_paths()
+from utils.logger_config import setup_logging
+setup_logging()
 
 import json
 import threading
@@ -61,6 +63,10 @@ try:
     TRANSLATION_AVAILABLE = True
 except ImportError:
     TRANSLATION_AVAILABLE = False
+
+# AI Learning Assistant
+from learning_assistant.session_manager import SessionManager
+from ui.study_panel import StudyPanel
 
 SAMPLE_RATE = 16000
 CHUNK_DURATION = 3.0
@@ -91,6 +97,9 @@ class TranscriptionApp(ctk.CTk):
         self.use_microphone = False  # Default: speaker loopback
         self.translate_enabled = False
         self.settings_visible = False
+        
+        self.settings_visible = False
+        self.session_manager = SessionManager()
         
         self._create_ui()
         self._check_queue()
@@ -283,7 +292,19 @@ class TranscriptionApp(ctk.CTk):
             hover_color="#4a4a5c",
             command=self._export_text
         )
-        self.export_btn.grid(row=0, column=3, padx=(0, 15))
+        self.export_btn.grid(row=0, column=3, padx=5)
+        
+        self.analyze_btn = ctk.CTkButton(
+            self.live_bar,
+            text="🧠 Analizar",
+            width=80,
+            height=30,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="#5a189a",
+            hover_color="#7b2cbf",
+            command=self._open_study_panel
+        )
+        self.analyze_btn.grid(row=0, column=4, padx=(0, 15))
     
     def _toggle_settings(self):
         """Toggle settings panel visibility (Norman: progressive disclosure)"""
@@ -509,6 +530,38 @@ class TranscriptionApp(ctk.CTk):
                     f.write(self.translated_text.get("1.0", "end"))
             self.status_text.configure(text="Exportado ✓")
             self.after(2000, lambda: self.status_text.configure(text="Escuchando..." if self.is_running else "Listo"))
+
+    def _open_study_panel(self):
+        """Open the AI Study Assistant panel"""
+        text = self.original_text.get("1.0", "end").strip()
+        if not text:
+            self.status_text.configure(text="⚠️ Nada para analizar")
+            return
+            
+        self.status_text.configure(text="🤖 Iniciando agente AI...")
+        
+        # Open window FIRST so we can reference the panel in the callback
+        study_window = ctk.CTkToplevel(self)
+        study_window.title("🎓 Asistente de Estudio AI")
+        study_window.geometry("1000x700")
+        
+        panel = StudyPanel(study_window, self.session_manager)
+        panel.pack(fill="both", expand=True)
+
+        # Callback to update UI status from background thread
+        def on_progress(msg, percent):
+             # Update main window status bar
+             self.after(0, lambda: self.status_text.configure(text=f"🤖 {msg}"))
+             # Update study panel progress bar
+             self.after(0, lambda: panel.update_progress(msg, percent))
+
+        # Save session and start background analysis
+        class_id = self.session_manager.save_session(text, duration=0, progress_callback=on_progress)
+        
+        if class_id:
+            # Load data (will update as analysis progresses)
+            panel.load_data(class_id)
+
 
 
 if __name__ == "__main__":
